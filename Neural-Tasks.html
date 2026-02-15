@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Tasks | L'Univers des Tâches</title>
+    <style>
+        
+        :root {
+            --bg-deep: #050510;
+            --bg-panel: rgba(20, 20, 40, 0.6);
+            --neon-cyan: #00f3ff;
+            --neon-pink: #ff00aa;
+            --neon-purple: #bd00ff;
+            --text-main: #ffffff;
+            --text-dim: #8b9bb4;
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --font-main: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            --ease-elastic: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            font-family: var(--font-main);
+            overflow: hidden; 
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 1000px;
+        }
+
+        #universe-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        .interface-container {
+            position: relative;
+            z-index: 10;
+            width: 90%;
+            max-width: 500px;
+            height: 85vh;
+            background: var(--bg-panel);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: 0 0 50px rgba(0, 243, 255, 0.05), inset 0 0 20px rgba(255, 255, 255, 0.02);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: hudEntrance 1s var(--ease-elastic) forwards;
+        }
+
+        @keyframes hudEntrance {
+            0% { opacity: 0; transform: scale(0.8) translateY(50px) rotateX(10deg); }
+            100% { opacity: 1; transform: scale(1) translateY(0) rotateX(0deg); }
+        }
+
+        header {
+            padding: 24px;
+            text-align: center;
+            border-bottom: 1px solid var(--glass-border);
+            position: relative;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+            background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+            text-shadow: 0 0 20px rgba(0, 243, 255, 0.3);
+        }
+
+        .progress-ring {
+            position: relative;
+            width: 60px;
+            height: 60px;
+            margin: 0 auto;
+        }
+
+        .progress-ring svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring circle {
+            fill: transparent;
+            stroke-width: 6;
+            stroke-linecap: round;
+        }
+
+        .ring-bg {
+            stroke: rgba(255, 255, 255, 0.1);
+        }
+
+        .ring-val {
+            stroke: var(--neon-cyan);
+            stroke-dasharray: 163; 
+            stroke-dashoffset: 163;
+            transition: stroke-dashoffset 0.8s ease-in-out, stroke 0.5s;
+            filter: drop-shadow(0 0 5px var(--neon-cyan));
+        }
+
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: var(--text-dim);
+        }
+
+        .sound-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        .sound-toggle:hover { color: var(--neon-cyan); }
+
+        .input-area {
+            padding: 20px;
+            position: relative;
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            flex-grow: 1;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            padding: 14px 16px;
+            border-radius: 12px;
+            color: var(--text-main);
+            font-family: var(--font-main);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2), inset 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        .add-btn {
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+            border: none;
+            width: 50px;
+            border-radius: 12px;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: transform 0.2s, filter 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .add-btn:hover {
+            transform: scale(1.05);
+            filter: brightness(1.2);
+        }
+
+        .add-btn:active {
+            transform: scale(0.95);
+        }
+
+        .task-list-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 10px 20px 20px 20px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--neon-purple) rgba(0,0,0,0.3);
+        }
+
+        .task-list-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        .task-list-container::-webkit-scrollbar-thumb {
+            background: var(--neon-purple);
+            border-radius: 3px;
+        }
+
+        ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .task-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            padding: 16px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            cursor: grab;
+            animation: taskSpawn 0.5s ease-out forwards;
+            backdrop-filter: blur(5px);
+        }
+
+        .task-item.dragging {
+            opacity: 0.5;
+            border: 1px dashed var(--neon-cyan);
+            transform: scale(0.95);
+        }
+
+        .task-item:hover {
+            transform: translateY(-2px) scale(1.01);
+            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.07);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes taskSpawn {
+            from { opacity: 0; transform: translateY(20px) scale(0.9); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .task-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-grow: 1;
+        }
+
+        .custom-checkbox {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--text-dim);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .custom-checkbox::after {
+            content: '';
+            width: 0%;
+            height: 0%;
+            background: var(--neon-cyan);
+            border-radius: 50%;
+            transition: all 0.3s;
+            box-shadow: 0 0 10px var(--neon-cyan);
+        }
+
+        .task-item.completed {
+            border-color: var(--neon-cyan);
+            background: rgba(0, 243, 255, 0.05);
+        }
+
+        .task-item.completed .custom-checkbox {
+            border-color: var(--neon-cyan);
+        }
+
+        .task-item.completed .custom-checkbox::after {
+            width: 12px;
+            height: 12px;
+        }
+
+        .task-text {
+            font-size: 0.95rem;
+            color: var(--text-main);
+            transition: color 0.3s;
+            word-break: break-word;
+        }
+
+        .task-item.completed .task-text {
+            color: var(--text-dim);
+            text-decoration: line-through;
+            text-decoration-color: var(--neon-cyan);
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 1.2rem;
+            opacity: 0;
+            transition: all 0.3s;
+            padding: 5px;
+        }
+
+        .task-item:hover .delete-btn {
+            opacity: 1;
+        }
+
+        .delete-btn:hover {
+            color: var(--neon-pink);
+            text-shadow: 0 0 10px var(--neon-pink);
+            transform: rotate(90deg);
+        }
+
+        .explosion-particle {
+            position: absolute;
+            background: var(--neon-cyan);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-dim);
+            margin-top: 50px;
+            font-style: italic;
+            opacity: 0.6;
+        }
+
+        @media (max-width: 600px) {
+            .interface-container {
+                width: 100%;
+                height: 100%;
+                border-radius: 0;
+                border: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="universe-canvas"></canvas>
+
+    <main class="interface-container">
+        <header>
+            <button class="sound-toggle" id="soundToggle" aria-label="Activer/Désactiver le son">
+                🔇
+            </button>
+            <h1>Neural Tasks</h1>
+            
+            <div class="progress-ring">
+                <svg>
+                    <circle class="ring-bg" cx="30" cy="30" r="26"></circle>
+                    <circle class="ring-val" id="progressCircle" cx="30" cy="30" r="26"></circle>
+                </svg>
+                <div class="progress-text" id="progressText">0%</div>
+            </div>
+        </header>
+
+        <section class="input-area">
+            <div class="input-wrapper">
+                <input type="text" id="taskInput" placeholder="Initialiser une nouvelle mission..." autocomplete="off">
+            </div>
+            <button class="add-btn" id="addBtn" aria-label="Ajouter tâche">
+                +
+            </button>
+        </section>
+
+        <section class="task-list-container">
+            <ul id="taskList">
+            </ul>
+            <div id="emptyState" class="empty-state">
+                Aucune mission active. Le système est en attente.
+            </div>
+        </section>
+    </main>
+
+    <script>
+        
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.enabled = false;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+
+            toggle() {
+                this.enabled = !this.enabled;
+                if (this.enabled) this.init();
+                return this.enabled;
+            }
+
+            playTone(freq, type, duration, vol = 0.1) {
+                if (!this.enabled || !this.ctx) return;
+                
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                
+                gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.start();
+                osc.stop(this.ctx.currentTime + duration);
+            }
+
+            playAdd() {
+                this.playTone(300, 'sine', 0.3, 0.1);
+                setTimeout(() => this.playTone(600, 'triangle', 0.2, 0.05), 50);
+            }
+
+            playComplete() {
+                this.playTone(800, 'sine', 0.5, 0.1);
+                this.playTone(1200, 'sine', 0.8, 0.05);
+                setTimeout(() => this.playTone(1500, 'triangle', 0.3, 0.05), 100);
+            }
+
+            playDelete() {
+                this.playTone(150, 'sawtooth', 0.4, 0.1);
+            }
+        }
+
+        class VisualEngine {
+            constructor() {
+                this.canvas = document.getElementById('universe-canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.particles = [];
+                this.mouse = { x: null, y: null };
+                
+                this.resize();
+                window.addEventListener('resize', () => this.resize());
+                
+                window.addEventListener('mousemove', (e) => {
+                    this.mouse.x = e.x;
+                    this.mouse.y = e.y;
+                });
+
+                this.initParticles();
+                this.animate();
+            }
+
+            resize() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            }
+
+            initParticles() {
+                this.particles = [];
+                const numberOfParticles = (this.canvas.width * this.canvas.height) / 9000;
+                for (let i = 0; i < numberOfParticles; i++) {
+                    this.particles.push(new Particle(this.canvas));
+                }
+            }
+
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                this.particles.forEach(particle => {
+                    particle.update(this.mouse);
+                    particle.draw(this.ctx);
+                });
+            }
+
+            triggerExplosion(x, y, color) {
+                for(let i=0; i<20; i++) {
+                    const p = document.createElement('div');
+                    p.classList.add('explosion-particle');
+                    document.body.appendChild(p);
+                    
+                    const size = Math.random() * 6 + 2;
+                    p.style.width = `${size}px`;
+                    p.style.height = `${size}px`;
+                    p.style.background = color;
+                    p.style.boxShadow = `0 0 10px ${color}`;
+                    p.style.left = `${x}px`;
+                    p.style.top = `${y}px`;
+
+                    const destX = (Math.random() - 0.5) * 200;
+                    const destY = (Math.random() - 0.5) * 200;
+
+                    const animation = p.animate([
+                        { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+                        { transform: `translate(${destX}px, ${destY}px) scale(0)`, opacity: 0 }
+                    ], {
+                        duration: 600 + Math.random() * 400,
+                        easing: 'cubic-bezier(0, .9, .57, 1)'
+                    });
+
+                    animation.onfinish = () => p.remove();
+                }
+            }
+        }
+
+        class Particle {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 0.5;
+                this.speedX = (Math.random() * 1) - 0.5;
+                this.speedY = (Math.random() * 1) - 0.5;
+                this.color = Math.random() > 0.5 ? '#00f3ff' : '#bd00ff'; // Cyan ou Purple
+            }
+
+            update(mouse) {
+                this.x += this.speedX;
+                this.y += this.speedY;
+
+                if (this.x > this.canvas.width || this.x < 0) this.speedX *= -1;
+                if (this.y > this.canvas.height || this.y < 0) this.speedY *= -1;
+
+                let dx = mouse.x - this.x;
+                let dy = mouse.y - this.y;
+                let distance = Math.sqrt(dx*dx + dy*dy);
+
+                if (distance < 100 && mouse.x) {
+                    const forceDirectionX = dx / distance;
+                    const forceDirectionY = dy / distance;
+                    const force = (100 - distance) / 100;
+                    const directionX = forceDirectionX * force * 2;
+                    const directionY = forceDirectionY * force * 2;
+                    this.x -= directionX;
+                    this.y -= directionY;
+                }
+            }
+
+            draw(ctx) {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        class TaskManager {
+            constructor() {
+                this.tasks = JSON.parse(localStorage.getItem('neuralTasks')) || [];
+                this.visuals = new VisualEngine();
+                this.audio = new SoundEngine();
+                
+                this.input = document.getElementById('taskInput');
+                this.addBtn = document.getElementById('addBtn');
+                this.list = document.getElementById('taskList');
+                this.emptyState = document.getElementById('emptyState');
+                this.progressCircle = document.getElementById('progressCircle');
+                this.progressText = document.getElementById('progressText');
+                this.soundBtn = document.getElementById('soundToggle');
+
+                this.initListeners();
+                this.render();
+                this.updateProgress();
+            }
+
+            initListeners() {
+                this.addBtn.addEventListener('click', () => this.addTask());
+                this.input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.addTask();
+                });
+
+                this.list.addEventListener('dragover', (e) => {
+                    e.preventDefault(); 
+                    const afterElement = this.getDragAfterElement(this.list, e.clientY);
+                    const draggable = document.querySelector('.dragging');
+                    if (draggable) {
+                        if (afterElement == null) {
+                            this.list.appendChild(draggable);
+                        } else {
+                            this.list.insertBefore(draggable, afterElement);
+                        }
+                    }
+                });
+
+                this.soundBtn.addEventListener('click', () => {
+                    const isOn = this.audio.toggle();
+                    this.soundBtn.textContent = isOn ? '🔊' : '🔇';
+                    this.soundBtn.style.color = isOn ? 'var(--neon-cyan)' : 'var(--text-dim)';
+                });
+            }
+
+            save() {
+                localStorage.setItem('neuralTasks', JSON.stringify(this.tasks));
+                this.updateProgress();
+            }
+
+            addTask() {
+                const text = this.input.value.trim();
+                if (!text) return;
+
+                const newTask = {
+                    id: Date.now(),
+                    text: text,
+                    completed: false
+                };
+
+                this.tasks.push(newTask);
+                this.input.value = '';
+                this.audio.playAdd();
+                this.render();
+                this.save();
+            }
+
+            deleteTask(id, element) {
+                element.style.transform = 'scale(0.9) translateX(50px)';
+                element.style.opacity = '0';
+                
+                setTimeout(() => {
+                    this.tasks = this.tasks.filter(t => t.id !== id);
+                    this.audio.playDelete();
+                    this.render();
+                    this.save();
+                }, 300);
+            }
+
+            toggleComplete(id, element) {
+                const task = this.tasks.find(t => t.id === id);
+                if (!task) return;
+
+                task.completed = !task.completed;
+                
+                if (task.completed) {
+                    const rect = element.getBoundingClientRect();
+                    const centerX = rect.left + rect.width / 2;
+                    const centerY = rect.top + rect.height / 2;
+                    
+                    this.visuals.triggerExplosion(centerX, centerY, '#00f3ff');
+                    this.audio.playComplete();
+                }
+
+                this.render();
+                this.save();
+            }
+
+            updateProgress() {
+                const total = this.tasks.length;
+                const completed = this.tasks.filter(t => t.completed).length;
+                const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
+
+                const radius = 26;
+                const circumference = 2 * Math.PI * radius; 
+                const offset = circumference - (percent / 100) * circumference;
+                
+                this.progressCircle.style.strokeDashoffset = offset;
+                
+                if(percent === 100) {
+                    this.progressCircle.style.stroke = 'var(--neon-purple)';
+                } else {
+                    this.progressCircle.style.stroke = 'var(--neon-cyan)';
+                }
+
+                this.progressText.innerText = `${percent}%`;
+                
+                if (total === 0) {
+                    this.emptyState.style.display = 'block';
+                } else {
+                    this.emptyState.style.display = 'none';
+                }
+            }
+
+            getDragAfterElement(container, y) {
+                const draggableElements = [...container.querySelectorAll('.task-item:not(.dragging)')];
+
+                return draggableElements.reduce((closest, child) => {
+                    const box = child.getBoundingClientRect();
+                    const offset = y - box.top - box.height / 2;
+                    if (offset < 0 && offset > closest.offset) {
+                        return { offset: offset, element: child };
+                    } else {
+                        return closest;
+                    }
+                }, { offset: Number.NEGATIVE_INFINITY }).element;
+            }
+
+            render() {
+                this.list.innerHTML = '';
+                
+                this.tasks.forEach((task, index) => {
+                    const li = document.createElement('li');
+                    li.className = `task-item ${task.completed ? 'completed' : ''}`;
+                    li.draggable = true;
+                    li.dataset.id = task.id;
+
+                    li.style.animationDelay = `${index * 50}ms`;
+
+                    li.innerHTML = `
+                        <div class="task-content">
+                            <div class="custom-checkbox"></div>
+                            <span class="task-text">${this.escapeHtml(task.text)}</span>
+                        </div>
+                        <button class="delete-btn" aria-label="Supprimer">✖</button>
+                    `;
+
+                    const checkbox = li.querySelector('.custom-checkbox');
+                    checkbox.addEventListener('click', (e) => {
+                        e.stopPropagation(); 
+                        this.toggleComplete(task.id, li);
+                    });
+
+                    li.querySelector('.task-text').addEventListener('click', () => {
+                        this.toggleComplete(task.id, li);
+                    });
+
+                    const delBtn = li.querySelector('.delete-btn');
+                    delBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.deleteTask(task.id, li);
+                    });
+
+                    li.addEventListener('dragstart', () => {
+                        li.classList.add('dragging');
+                    });
+
+                    li.addEventListener('dragend', () => {
+                        li.classList.remove('dragging');
+                        this.updateOrderFromDOM();
+                    });
+
+                    this.list.appendChild(li);
+                });
+            }
+
+            updateOrderFromDOM() {
+                const newOrderIds = [...this.list.querySelectorAll('.task-item')].map(el => parseInt(el.dataset.id));
+                const taskMap = new Map(this.tasks.map(t => [t.id, t]));
+                this.tasks = newOrderIds.map(id => taskMap.get(id)).filter(t => t !== undefined);
+                this.save();
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const app = new TaskManager();
+        });
+
+    </script>
+</body>
+</html>
